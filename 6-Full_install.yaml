@@ -1,0 +1,117 @@
+---
+# Installs IdM server and enables DNS PTR sync
+- name: Installs the IdM server
+  hosts: ipaserver
+  roles:
+    - role: redhat.rhel_idm.ipaserver
+  tags: server
+- name: Turn IdM DNS PTR Sync on
+  hosts: ipaserver
+  roles:
+    - role: idm-dns_ptr
+  tags: server
+# Configure IdM
+- name: Setup IDP
+  hosts: ipaserver
+  roles:
+    - role: idm-idp
+  tags:
+    - idp
+- name: Create IdM users
+  hosts: ipaserver
+  roles:
+    - role: idm-users
+  tags: idmUsers
+- name: Create external group for AD Users/Groups
+  hosts: ipaserver
+  roles:
+    - role: idm-groups
+  tags: idmGrps
+- name: Set default shell
+  hosts: ipaserver
+  roles:
+    - role: idm-defaults
+  tags: defaults
+- name: Create client host group
+  hosts: ipaserver
+  become: false
+  roles:
+    - role: idm-hostgroup
+  tags: hostGrp
+- name: Create HBAC Rules
+  hosts: ipaserver
+  become: false
+  roles:
+    - role: idm-hbac
+  tags: hbac
+- name: Create IdM SUDO rules
+  hosts: ipaserver
+  become: false
+  roles:
+    - role: idm-sudo
+  tags: sudo
+# Configure client DNS to point to IdM server and install client
+- name: Update nameserver entry on ipareplcas and ipaclients
+  hosts: ipaclients
+  roles:
+    - role: redhat.rhel_system_roles.network # Changes IdM clients DNS to point to IdM server for resolution
+  tags: network
+- name: Installs the IdM clients
+  hosts: ipaclients
+  roles:
+    - role: redhat.rhel_idm.ipaclient
+  tags: clients
+# Promotes Windows server to DC, creates users and group, and delegates IdM DNS zone
+- name: Promote Windows server to DC and creates users and groups to log into RHEL
+  hosts: win
+  gather_facts: true
+  become_method: runas
+  become_user: Administrator
+  become: false
+  roles:
+    - role: winPromote # Converts Windows server into domain controller and adds users and groups
+      state: present
+  tags: win1
+- name: Delegate DNS
+  hosts: win
+  become_method: runas
+  become_user: Administrator
+  become: false
+  roles:
+    - role: win_delegate # Delegates sub-domain to IdM
+      state: present
+  tags: win2
+# Create AD Trust
+- name: Sets up the AD trust.
+  hosts: ipaserver
+  roles:
+    - role: idm-dns_ad_setup
+  tags: adtrust
+# Add AD groups to groups to IdM
+- name: Add AD groups to IdM
+  hosts: ipaserver
+  roles:
+    - role: idm-ad-groups
+  tags: idmadGrps
+# Configure IdM replica DNS to point to IdM server and install replica
+- name: Update nameserver entry on ipareplcas and ipaclients
+  hosts: ipareplicas
+  roles:
+    - role: redhat.rhel_system_roles.network # Changes IdM clients DNS to point to IdM server for resolution
+  tags: network
+- name: Installs the IdM replicas
+  hosts: ipareplicas
+  roles:
+    - role: redhat.rhel_idm.ipareplica
+  tags: replicas
+# Add IdM replica to delegated DNS in AD
+- name: Delegate IdM Zone to IdM Primary
+  hosts: win
+  become_method: runas
+  become_user: Administrator
+  become_user_password: "{{ admin_password }}"
+  become: false
+  tasks:
+  - ansible.windows.win_powershell:
+    script: Add-DnsServerZoneDelegation -Name "{{ root_domain }}" -ChildZoneName "{{ shortname }}" -NameServer "{{ idm_dns[1].idm_srv }}" -IPAddress "{{ idm_dns[1].idm_ip }}"
+  tags: win3

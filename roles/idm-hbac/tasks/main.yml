@@ -1,0 +1,39 @@
+---
+# tasks file for idm-hbac
+- name: Creates HBAC Service for http
+  redhat.rhel_idm.ipahbacsvc:
+    ipaadmin_password: "{{ admin_password }}" # IdM Admin password
+    name: http
+    description: "Web service"
+- name: Creates HBAC Services group
+  redhat.rhel_idm.ipahbacsvcgroup:
+    ipaadmin_password: "{{ admin_password }}" # IdM Admin password
+    name: web_services
+    description: Services needed for Web Servers
+    hbacsvc:
+      - http
+      - sudo
+      - sshd
+- name: HBAC Rule on what group can use web_services
+  redhat.rhel_idm.ipahbacrule: # Creates the rule
+    ipaadmin_password: "{{ admin_password }}" # IdM Admin password
+    name: web_services_rule # Rule name
+    hbacsvcgroup: # Service(s) for the rule
+      - web_services
+    group: # User group
+      - "{{ idm_groups[0].ipa_group }}"
+    hostgroup: # Host name
+      - "{{ idm_host_group }}"
+- name: HBAC Rule for IdM administrator
+  redhat.rhel_idm.ipahbacrule: # Rule to allow admins full access
+    ipaadmin_password: "{{ admin_password }}" # IdM Admin password
+    name: admin_access # Rule name
+    servicecat: all # All services
+    hostcat: all # All hosts
+    group: # User group
+      - "{{ idm_groups[1].ipa_group }}"
+- name: Disable allow_all HBAC Rule
+  redhat.rhel_idm.ipahbacrule: # Rule to allow admins full access
+    ipaadmin_password: "{{ admin_password }}" # IdM Admin password
+    name: allow_all # Rule name
+    state: disabled # Disables rule to allow everyone the ability to login

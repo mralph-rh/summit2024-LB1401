@@ -1,0 +1,8 @@
+---
+# tasks file for idm-hostgroup
+- name: Create hostsgroup for clients
+  become_method: sudo
+  redhat.rhel_idm.ipahostgroup:
+    ipaadmin_password: "{{ admin_password }}"
+    name: "{{ idm_host_group }}"
+    description: "Client servers"

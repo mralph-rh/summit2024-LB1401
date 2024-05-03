@@ -1,0 +1,16 @@
+---
+# tasks file for idm-dnsconfig
+- name: Allow PTR Sync on forward zone
+  redhat.rhel_idm.ipadnszone:
+    ipaadmin_password: "{{ admin_password }}"
+    name: "{{ domain }}"
+    allow_sync_ptr: true
+    dynamic_update: true
+    state: present
+- name: Allow PTR Sync on reverse zone
+  redhat.rhel_idm.ipadnszone:
+    ipaadmin_password: "{{ admin_password }}"
+    name: "{{ ipaserver_reverse_zones }}"
+    allow_sync_ptr: true
+    dynamic_update: true
+    state: present

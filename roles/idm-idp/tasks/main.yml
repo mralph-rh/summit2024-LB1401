@@ -1,0 +1,11 @@
+---
+# tasks file for idm-idp
+- name: Create IDP
+  redhat.rhel_idm.ipaidp:
+    ipaadmin_password: "{{ admin_password }}"
+    name: "{{ item.idp_name }}"
+    provider: "{{ item.idp_provider }}"
+    client_id: "{{ item.idp_clientid }}"
+    secret: "{{ item.idp_secret }}"
+    organization: "{{ item.idp_org }}"
+  with_items: "{{ idm_idp }}"

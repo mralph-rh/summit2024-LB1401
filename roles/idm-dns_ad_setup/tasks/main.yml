@@ -1,0 +1,18 @@
+---
+# tasks file for idm-dns_ad_setup
+- name: Set DNS forwardzone for AD
+  redhat.rhel_idm.ipadnsforwardzone:
+    ipaadmin_password: "{{ admin_password }}"
+    state: present
+    name: "{{ root_domain }}"
+    forwarders:
+      - ip_address: "{{ ad_ip }}"
+    forwardpolicy: only
+    skip_overlap_check: true
+- name: Configure AD trust
+  redhat.rhel_idm.ipatrust:
+    ipaadmin_password: "{{ admin_password }}"
+    realm: "{{ root_domain }}"
+    admin: delegate
+    password: "{{ admin_password }}"
+    state: present

@@ -1,0 +1,7 @@
+---
+# tasks file for idm-defaults
+- name: Update shell to bash
+  redhat.rhel_idm.ipaconfig:
+    ipaadmin_password: "{{ admin_password }}"
+    defaultshell: "{{ idm_shell }}"
+    defaultgroup: "{{ idm_groups[0].ipa_group }}"

@@ -1,0 +1,35 @@
+---
+# tasks file for idm-groups
+# Create internal group for IdM Users & add int AD users group and IdM users
+- name: Create IdM groups
+  redhat.rhel_idm.ipagroup:
+    ipaadmin_password: "{{ admin_password }}"
+    name: "{{ item.ipa_group }}"
+    description: "{{ item.ipa_grpDesc }}"
+  with_items: "{{ idm_groups }}"
+# Add IdM users to IdM users group
+- name: Added users to IdM user group
+  redhat.rhel_idm.ipagroup:
+    ipaadmin_password: "{{ admin_password }}"
+    name: "{{ idm_groups[0].ipa_group }}"
+    action: member
+    user:
+      - "{{ item.idm_name }}"
+  with_items: "{{ idm_users }}"
+- name: Added admins to IdM admins group
+  redhat.rhel_idm.ipagroup:
+    ipaadmin_password: "{{ admin_password }}"
+    name: "{{ idm_groups[1].ipa_group }}"
+    action: member
+    user:
+      - "{{ item.idm_name }}"
+  with_items: "{{ idm_admins }}"
+# Add IDP users to IdM admins group
+- name: Added IDP users to IdM admins group
+  redhat.rhel_idm.ipagroup:
+    ipaadmin_password: "{{ admin_password }}"
+    name: "{{ idm_groups[1].ipa_group }}"
+    action: member
+    user:
+      - "{{ item.idm_name }}"
+  with_items: "{{ idp_admins }}"

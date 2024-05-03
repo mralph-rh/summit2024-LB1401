@@ -1,0 +1,58 @@
+---
+# tasks file for winCreate
+- name: Promote to DC
+  microsoft.ad.domain:
+    dns_domain_name: "{{ root_domain }}"
+    safe_mode_password: "{{ admin_password }}"
+    domain_netbios_name: "{{ ad_netbios }}"
+    create_dns_delegation: false
+    reboot: true
+- name: Pause for reboot
+  ansible.builtin.pause:
+    minutes: 5
+- name: Create AD IdM groups for IdM integration
+  microsoft.ad.group:
+    name: "{{ item.ad_group }}"
+    scope: global
+  with_items: "{{ ad_groups }}"
+# Creates AD users that will have access to IdM and assigns to appropiate group
+- name: Create AD IdM user accounts for IdM integration
+  microsoft.ad.user:
+    name: "{{ item.ad_name }}"
+    firstname: "{{ item.ad_first }}"
+    surname: "{{ item.ad_last }}"
+    password: "{{ user_password }}"
+    state: present
+    groups:
+      add:
+        - "{{ ad_groups[0].ad_group }}"
+    domain_username: '{{ ad_netbios }}\{{ ad_admin }}'
+    domain_password: "{{ admin_password }}"
+  with_items: "{{ ad_idm_users }}"
+- name: AD admins for IdM integration
+  microsoft.ad.user:
+    name: "{{ item.ad_name }}"
+    firstname: "{{ item.ad_first }}"
+    surname: "{{ item.ad_last }}"
+    password: "{{ admin_password }}"
+    state: present
+    groups:
+      add:
+        - "{{ ad_groups[1].ad_group }}"
+        - Enterprise Admins
+    domain_username: '{{ ad_netbios }}\{{ ad_admin }}'
+    domain_password: "{{ admin_password }}"
+  with_items: "{{ ad_idm_admins }}"
+# Creating DNS delegation Enterprise Admin user. Admin uses old hash so fails to connect with IdM.
+- name: Add AD Enterprise User
+  microsoft.ad.user:
+    name: delegate
+    firstname: DNS
+    surname: Delegation
+    password: "{{ admin_password }}"
+    state: present
+    groups:
+      add:
+        - Enterprise Admins
+    domain_username: '{{ ad_netbios }}\{{ ad_admin }}'
+    domain_password: "{{ admin_password }}"

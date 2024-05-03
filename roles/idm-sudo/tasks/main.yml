@@ -1,0 +1,42 @@
+---
+# tasks file for idm-sudo
+- name: Adding zip to SUDO Commands
+  redhat.rhel_idm.ipasudocmd:
+    ipaadmin_password: "{{ admin_password }}"
+    name: /bin/zip
+    state: present
+- name: Adding unzip to SUDO Commands
+  redhat.rhel_idm.ipasudocmd:
+    ipaadmin_password: "{{ admin_password }}"
+    name: /bin/unzip
+    state: present
+- name: Adding less to SUDO Commands
+  redhat.rhel_idm.ipasudocmd:
+    ipaadmin_password: "{{ admin_password }}"
+    name: /bin/less
+    state: present
+- name: Creating SUDO Command Group for archiving tools
+  redhat.rhel_idm.ipasudocmdgroup:
+    ipaadmin_password: "{{ admin_password }}"
+    name: archive_group
+    sudocmd:
+      - /bin/zip
+      - /bin/unzip
+      - /bin/less
+- name: Creating SUDO Rule for archiving tool usage
+  redhat.rhel_idm.ipasudorule:
+    ipaadmin_password: "{{ admin_password }}"
+    name: archive_rule
+    allow_sudocmdgroup:
+      - archive_group
+    runasuser: root
+    group: "{{ idm_groups[0].ipa_group }}"
+    hostgroup: "{{ idm_host_group }}"
+- name: Create SUDO rule for admin group
+  redhat.rhel_idm.ipasudorule:
+    ipaadmin_password: "{{ admin_password }}"
+    name: sysadmins
+    group: "{{ idm_groups[1].ipa_group }}"
+    hostcategory: all
+    cmdcategory: all
+    runasusercategory: all

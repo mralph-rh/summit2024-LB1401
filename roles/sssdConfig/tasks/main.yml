@@ -1,0 +1,6 @@
+---
+# tasks file for sssdConfig
+- name: Ensure sssd.conf has correct permissions
+  ansible.builtin.file:
+    path: /etc/sssd/sssd.conf
+    mode: '0600'

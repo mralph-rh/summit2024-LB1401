@@ -1,0 +1,15 @@
+---
+# tasks file for idm-locations
+- name: Create IdM DNS locations
+  redhat.rhel_idm.ipalocation:
+    ipaadmin_password: "{{ admin_password }}"
+    name: "{{ item.location }}"
+    description: "{{ item.desc }}"
+  with_items: "{{ idm_locations }}"
+- name: Update IdM server location
+  redhat.rhel_idm.ipaserver:
+    ipaadmin_password: "{{ admin_password }}"
+    name: "{{ item.server }}"
+    location: "{{ item.location }}"
+    state: present
+  with_items: "{{ idm_locations }}"
