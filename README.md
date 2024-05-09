@@ -19,6 +19,13 @@ All variables are located in the inventory file out of laziness.
 
 
 
+License
+-------
+
+GPL-3.0-only
+
+
+
 Author Information
 ------------------
 
