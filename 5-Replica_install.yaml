@@ -1,0 +1,24 @@
+---
+# Configure IdM replica DNS to point to IdM server and install replica
+- name: Update nameserver entry on ipareplcas and ipaclients
+  hosts: ipareplicas
+  roles:
+    - role: redhat.rhel_system_roles.network # Changes IdM clients DNS to point to IdM server for resolution
+  tags: network
+- name: Installs the IdM replicas
+  hosts: ipareplicas
+  roles:
+    - role: redhat.rhel_idm.ipareplica
+  tags: replicas
+# Add IdM replica to delegated DNS in AD
+- name: Add IdM Replica to AD DNS Delegate Zone
+  hosts: win
+  become_method: runas
+  become_user: Administrator
+  become: false
+  roles:
+  - role: win_delegate # Delegates sub-domain to IdM
+    vars: 
+      idmsrv: "{{ idm_dns[1].idm_srv }}"
+      idmip: "{{ idm_dns[1].idm_ip }}"
+  tags: win3

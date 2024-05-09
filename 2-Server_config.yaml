@@ -1,0 +1,41 @@
+---
+# Configure IdM
+- name: Setup IDP
+  hosts: ipaserver
+  roles:
+    - role: idm-idp
+  tags:
+    - idp
+- name: Create IdM users
+  hosts: ipaserver
+  roles:
+    - role: idm-users
+  tags: idmUsers
+- name: Create external group for AD Users/Groups
+  hosts: ipaserver
+  roles:
+    - role: idm-groups
+  tags: idmGrps
+- name: Set default shell
+  hosts: ipaserver
+  roles:
+    - role: idm-defaults
+  tags: defaults
+- name: Create client host group
+  hosts: ipaserver
+  become: false
+  roles:
+    - role: idm-hostgroup
+  tags: hostGrp
+- name: Create HBAC Rules
+  hosts: ipaserver
+  become: false
+  roles:
+    - role: idm-hbac
+  tags: hbac
+- name: Create IdM SUDO rules
+  hosts: ipaserver
+  become: false
+  roles:
+    - role: idm-sudo
+  tags: sudo

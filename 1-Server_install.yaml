@@ -1,0 +1,12 @@
+---
+# Installs IdM server and enables DNS PTR sync
+- name: Installs the IdM server
+  hosts: ipaserver
+  roles:
+    - role: redhat.rhel_idm.ipaserver
+  tags: server
+- name: Turn IdM DNS PTR Sync on
+  hosts: ipaserver
+  roles:
+    - role: idm-dns_ptr
+  tags: server

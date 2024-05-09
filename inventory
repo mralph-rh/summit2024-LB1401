@@ -1,0 +1,105 @@
+all:
+  children:
+    win:
+      hosts:
+        windows.{{ root_domain }}:
+          ansible_connection: ssh
+          ansible_shell_type: cmd
+          ansible_user: Administrator
+          ansible_password: "{{ ad_admin_password }}"
+    ipaserver:      
+      hosts: 
+        idmsrv.{{ shortname }}.{{ root_domain }}:
+    ipareplicas:
+      hosts: 
+        node1.{{ shortname }}.{{ root_domain }}:    
+    ipaclients:
+      hosts: 
+        node2.{{ shortname }}.{{ root_domain }}:
+  vars:
+# Global variables
+    admin_password: "" # Administrator password used for all applications
+    ad_admin_password: "" # Administrator password for Windows Admin
+    root_domain: "" # Root domain (also used as Windows domain)
+    shortname: "" # Sub-domain
+    domain: "{{ shortname }}.{{ root_domain }}" # Full domain name
+    third: "" # Third octect of subnet used.
+    user_password: "" # initial passwords for users
+    idmpri_ip: "" # First IdM server IP
+    idmrep_ip: "" # Second IdM server IP
+    winsrv_ip: "" # Windows server IP
+# IdM variables
+    ipaserver_domain: "{{ domain }}"
+    ipaserver_realm: "{{ domain | upper }}"
+    ipaserver_setup_dns: true # set to true if IdM will have integrated DNS, else comment out or set to false
+    ipaserver_setup_adtrust: true # set to true if you will be having an AD trust
+    ipaserver_reverse_zones: ".in-addr.arpa" # IP in reverse notation
+    ipaserver_allow_zone_overlap: true # Set to true if the domain is already resolvable
+#    ipaserver_forwarders: "" # Only needed if you need to forward DNS queries
+#    ipaserver_forward_policy: first # Only needed if you need to forward DNS queries
+    ipaserver_no_dnssec_validation: true # DNSSEC is not prevalent everywhere
+    ipaserver_netbios_name: "{{ shortname | upper }}"
+#    ipaserver_firewalld_zone: public # only needed if you use a different firewall zone besides the default
+#    ipareplica_forwarders: ""
+#    ipareplica_forward_policy: first
+    ipareplica_no_dnssec_validation: true # DNSSEC is not prevalent everywhere
+    ipareplica_setup_ca: true # set to true if replica will have CA installed, Red Hat recommends no more then 4 CA servers.
+    ipareplica_setup_dns: true # set to true if IdM will have integrated DNS, else comment out or set to false
+    ipareplica_setup_adtrust: true # set to true if you will be having an AD trust
+#    ipareplica_firewalld_zone: public # only needed if you use a different firewall zone besides the default
+    ipaclient_mkhomedir: true
+# IdM password variables, do not use same one for Prod/Dev. Same only for demo/POC
+    ipaadmin_password: "{{ admin_password }}" # IdM admin password
+    ipadm_password: "{{ admin_password }}" # IdM directory manager password
+# IdM User Creation
+    idm_users: # IPA users
+      - { idm_name: dauston, idm_first: Duncan, idm_last: Auston, id: 10001, ipa_group: idm-users }
+      - { idm_name: anadine, idm_first: Angie, idm_last: Nadine, id: 10002, ipa_group: idm-users }
+      - { idm_name: sbronte, idm_first: Sammy, idm_last: Bronte, id: 10003, ipa_group: idm-users }
+    idm_admins: # IdM admins name
+      - { idm_name: jsmith_idm, idm_first: John, idm_last: Smith, ipa_group: idm-admins }
+      - { idm_name: sjones_idm, idm_first: Susan, idm_last: Jones, ipa_group: idm-admins }
+    idp_admins: # IDP admins
+      - { idm_name: jsmith_azure, idm_first: John, idm_last: Smith, ipa_group: idm-admins, idp_ref: "Entra ID(Azure AD)", idp_name: "jsmith@{{ root_domain }}", authtype: idp }
+      - { idm_name: sjones_azure, idm_first: Susan, idm_last: Jones, ipa_group: idm-admins, idp_ref: "Entra ID(Azure AD)", idp_name: "sjones@{{ root_domain }}", authtype: idp }
+# IdM Group creation
+    idm_groups:
+      - { ipa_group: "idm-users", ipa_grpDesc: "IdM users group" }
+      - { ipa_group: "idm-admins", ipa_grpDesc: "IdM administrators group" }
+    idm_host_group: "ipa_clients" # hostgroup name
+# IdM Defaults
+    idm_shell: "/bin/bash"
+# IdM IDP creation
+    idm_idp:
+      - { idp_name: "Entra ID(Azure AD)", idp_provider: "microsoft", idp_clientid: "Test", idp_secret: "Test", idp_org: "Test" }
+# IdM DNS
+    idm_dns:
+      - { idm_srv: "idmsrv.{{ domain }}", idm_ip: "{{ idmpri_ip }}" }
+      - { idm_srv: "node1.{{ domain }}", idm_ip: "{{ idmrep_ip }}" }
+# RHEL variables
+    network_connections:
+    - name: "{{ ansible_default_ipv4.alias }}"
+      state: up
+      type: ethernet
+      persistent_state: present
+      ip:
+        dns: 
+          - "{{ idm_dns[0].idm_ip }}"
+        address: "{{ ansible_default_ipv4.address }}/24"
+        gateway4: "{{ ansible_default_ipv4.gateway }}"
+### Windows DNS
+    ad_ip: "{{ winsrv_ip }}" # AD IP
+# Windows variables
+    ad_netbios: "EXAMPLE"
+## AD Enterprise User/Group Creation
+    ad_groups:
+      - { ad_group: ad-idm-users, ipa_ad_grp: idm_ad_users, ad_grpDesc: "IdM external group for AD users", idm_ad_grpDesc: "IdM internal group for AD users" }
+      - { ad_group: ad-idm-admins, ipa_ad_grp: idm_ad_admins, ad_grpDesc: "IdM external group for AD admins", idm_ad_grpDesc: "IdM internal group for AD admins" }
+    ad_idm_admins: # AD enterprise admin name, needed for AD Trust creation
+      - { ad_name: jsmith_ad, ad_first: John, ad_last: Smith }
+      - { ad_name: sjones_ad, ad_first: Susan, ad_last: Jones }
+    ad_idm_users: # test users
+      - { ad_name: aduser1, ad_first: AD, ad_last: User1 }
+      - { ad_name: aduser2, ad_first: AD, ad_last: User2 }
+      - { ad_name: aduser3, ad_first: AD, ad_last: User3 }
+    ad_admin: "Administrator" # AD administrator name

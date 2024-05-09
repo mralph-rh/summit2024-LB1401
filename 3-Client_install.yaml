@@ -1,0 +1,12 @@
+---
+# Configure client DNS to point to IdM server and install client
+- name: Update nameserver entry on ipareplcas and ipaclients
+  hosts: ipaclients
+  roles:
+    - role: redhat.rhel_system_roles.network # Changes IdM clients DNS to point to IdM server for resolution
+  tags: network
+- name: Installs the IdM clients
+  hosts: ipaclients
+  roles:
+    - role: redhat.rhel_idm.ipaclient
+  tags: clients

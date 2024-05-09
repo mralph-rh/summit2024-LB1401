@@ -1,0 +1,35 @@
+---
+# Promotes Windows server to DC, creates users and group, and delegates IdM DNS zone
+- name: Promote Windows server to DC and creates users and groups to log into RHEL
+  hosts: win
+  gather_facts: true
+  become_method: runas
+  become_user: Administrator
+  become: false
+  roles:
+    - role: winPromote # Converts Windows server into domain controller and adds users and groups
+      state: present
+  tags: win1
+- name: Delegate DNS
+  hosts: win
+  become_method: runas
+  become_user: Administrator
+  become: false
+  roles:
+  - role: win_delegate # Delegates sub-domain to IdM
+    vars: 
+      idmsrv: "{{ idm_dns[0].idm_srv }}"
+      idmip: "{{ idm_dns[0].idm_ip }}"
+  tags: win2
+# Create AD Trust
+- name: Sets up the AD trust.
+  hosts: ipaserver
+  roles:
+    - role: idm-dns_ad_setup
+  tags: adtrust
+# Add AD groups to groups to IdM
+- name: Add AD groups to IdM
+  hosts: ipaserver
+  roles:
+    - role: idm-ad-groups
+  tags: idmadGrps
