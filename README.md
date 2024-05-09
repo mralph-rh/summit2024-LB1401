@@ -23,4 +23,4 @@ Variables are in two places: inventory and secret.yml
 Author Information
 ------------------
 
-Mike Ralph, Sr Technical Account Manager: https://rover.redhat.com/people/profile/mralph
+Mike Ralph, Sr Technical Account Manager
